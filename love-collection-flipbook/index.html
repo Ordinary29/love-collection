@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Love Collection · 爱的系列</title>
+<style>
+  :root { --gold:#8a5a1c; --cream:#fdf3e4; --ink:#4a2f10; }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  html,body { height:100%; background:#2a1c0e; background:radial-gradient(ellipse at center,#4a3319 0%,#1e140a 100%); color:var(--cream);
+    font-family:Georgia,"Songti SC","Noto Serif CJK SC",serif; overflow:hidden; }
+  #app { height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; padding:12px; }
+  #stage { position:relative; width:min(96vw, calc((100dvh - 150px) * 16 / 9)); aspect-ratio:16/9; perspective:2200px; user-select:none; touch-action:pan-y; }
+  .page { position:absolute; inset:0; border-radius:6px; overflow:hidden; background:#f5dfc0 center/cover no-repeat;
+    transform-origin:left center; transition:transform .9s cubic-bezier(.6,.05,.25,1), opacity .9s ease, box-shadow .9s;
+    box-shadow:0 18px 50px rgba(0,0,0,.55); backface-visibility:hidden; }
+  .page img { width:100%; height:100%; object-fit:cover; display:block; pointer-events:none; }
+  .page.flipped { transform:rotateY(-105deg); opacity:0; pointer-events:none; box-shadow:-30px 0 60px rgba(0,0,0,.4); }
+  .page::after { content:""; position:absolute; inset:0; pointer-events:none;
+    background:linear-gradient(90deg,rgba(0,0,0,.18),rgba(0,0,0,0) 6%); }
+  #caption { min-height:62px; text-align:center; max-width:min(92vw,820px); }
+  #caption .en { font-size:clamp(15px,2.3vw,20px); font-style:italic; color:#f6dcae; }
+  #caption .zh { font-size:clamp(14px,2vw,18px); margin-top:4px; color:#e9c78e; letter-spacing:.08em; }
+  #caption > div { transition:opacity .35s; }
+  #bar { display:flex; align-items:center; gap:16px; }
+  button { background:none; border:1px solid rgba(246,220,174,.45); color:#f6dcae; width:42px; height:42px; border-radius:50%;
+    font-size:20px; cursor:pointer; transition:.2s; }
+  button:hover:not(:disabled) { background:rgba(246,220,174,.15); }
+  button:disabled { opacity:.25; cursor:default; }
+  #dots { display:flex; gap:9px; }
+  #dots span { width:8px; height:8px; border-radius:50%; background:rgba(246,220,174,.3); cursor:pointer; transition:.3s; }
+  #dots span.on { background:#f6dcae; transform:scale(1.35); }
+  #count { font-size:13px; opacity:.7; min-width:44px; text-align:center; }
+  #wa { position:absolute; right:10px; bottom:10px; z-index:50; display:flex; align-items:center; gap:7px; background:#25d366; color:#fff; border:0;
+    border-radius:26px; padding:9px 15px; font:600 14px system-ui,sans-serif; cursor:pointer; box-shadow:0 4px 14px rgba(0,0,0,.35); text-decoration:none; width:auto; height:auto; }
+  #wa:hover { background:#1fb858; }
+  #sheet { position:fixed; inset:0; background:rgba(0,0,0,.6); display:none; align-items:flex-end; justify-content:center; z-index:100; }
+  #sheet.open { display:flex; }
+  #sheet .box { background:#fdf3e4; color:var(--ink); width:min(440px,100%); border-radius:18px 18px 0 0; padding:20px 18px 26px; }
+  #sheet h3 { font-size:17px; margin-bottom:4px; } #sheet p { font-size:13px; opacity:.7; margin-bottom:14px; }
+  #sheet a { display:flex; justify-content:space-between; align-items:center; padding:13px 14px; margin-bottom:9px; background:#fff; border:1px solid #e6cfa5;
+    border-radius:12px; color:var(--ink); text-decoration:none; font-size:15px; }
+  #sheet a small { color:#25a655; font:600 12px system-ui,sans-serif; }
+  #sheet a:hover { background:#fff7e8; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="stage" aria-live="polite"><a id="wa" href="#" target="_blank" rel="noopener">💬 WhatsApp</a></div>
+  <div id="sheet"><div class="box"><h3>Which piece interests you? 您喜欢哪一款？</h3><p>Tap to chat with us on WhatsApp</p><div id="opts"></div></div></div>
+  <div id="caption"><div class="en"></div><div class="zh"></div></div>
+  <div id="bar">
+    <button id="prev" aria-label="Previous page">‹</button>
+    <div id="dots"></div>
+    <span id="count"></span>
+    <button id="next" aria-label="Next page">›</button>
+  </div>
+</div>
+<script>
+(async function () {
+  const stage = document.getElementById('stage');
+  const en = document.querySelector('#caption .en');
+  const zh = document.querySelector('#caption .zh');
+  const dots = document.getElementById('dots');
+  const count = document.getElementById('count');
+  const prev = document.getElementById('prev');
+  const next = document.getElementById('next');
+
+  let pages = [], cfg = {};
+  try { cfg = await (await fetch('pages.json', { cache: 'no-cache' })).json(); pages = cfg.pages; }
+  catch (e) { stage.textContent = 'pages.json not found. Run: python3 build.py'; return; }
+
+  let cur = 0;
+  const waBtn = document.getElementById('wa'), sheet = document.getElementById('sheet'), opts = document.getElementById('opts');
+  const waLink = p => 'https://wa.me/' + cfg.phone + '?text=' + encodeURIComponent((cfg.greeting || 'Hi') + (p ? ' - ' + p.name + ' (Code: ' + p.code + ')' : ''));
+  (cfg.products || []).forEach(p => {
+    const a = document.createElement('a'); a.href = waLink(p); a.target = '_blank'; a.rel = 'noopener';
+    a.innerHTML = '<span>' + p.name + '</span><small>' + p.code + ' · WhatsApp ›</small>'; opts.appendChild(a);
+  });
+  sheet.onclick = e => { if (e.target === sheet) sheet.classList.remove('open'); };
+  waBtn.onclick = e => {
+    const p = pages[cur].product;
+    if (p) { waBtn.href = waLink(p); return; }
+    e.preventDefault(); sheet.classList.add('open');
+  };
+  stage.appendChild(waBtn);
+  const els = pages.map((p, i) => {
+    const d = document.createElement('div');
+    d.className = 'page';
+    d.style.zIndex = pages.length - i;
+    const img = new Image();
+    img.src = p.src; img.alt = p.en || ('Page ' + (i + 1)); img.draggable = false;
+    if (i > 1) img.loading = 'lazy';
+    d.appendChild(img);
+    stage.appendChild(d);
+    const dot = document.createElement('span');
+    dot.onclick = () => go(i);
+    dots.appendChild(dot);
+    return d;
+  });
+
+  function render() {
+    els.forEach((d, i) => d.classList.toggle('flipped', i < cur));
+    [...dots.children].forEach((d, i) => d.classList.toggle('on', i === cur));
+    prev.disabled = cur === 0;
+    next.disabled = cur === pages.length - 1;
+    count.textContent = (cur + 1) + ' / ' + pages.length;
+    const c = pages[cur];
+    [en, zh].forEach(e => e.style.opacity = 0);
+    setTimeout(() => { en.textContent = c.en || ''; zh.textContent = c.zh || ''; en.style.opacity = zh.style.opacity = 1; }, 220);
+  }
+  function go(n) { cur = Math.max(0, Math.min(pages.length - 1, n)); render(); }
+
+  prev.onclick = () => go(cur - 1);
+  next.onclick = () => go(cur + 1);
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === ' ') go(cur + 1);
+    if (e.key === 'ArrowLeft') go(cur - 1);
+  });
+  stage.addEventListener('click', e => {
+    if (e.target.closest('#wa')) return;
+    const r = stage.getBoundingClientRect();
+    go(e.clientX - r.left > r.width * 0.35 ? cur + 1 : cur - 1);
+  });
+  let x0 = null;
+  stage.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; }, { passive: true });
+  stage.addEventListener('touchend', e => {
+    if (x0 === null) return;
+    const dx = e.changedTouches[0].clientX - x0;
+    if (Math.abs(dx) > 40) go(cur + (dx < 0 ? 1 : -1));
+    x0 = null;
+  });
+  render();
+})();
+</script>
+</body>
+</html>

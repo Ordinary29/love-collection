@@ -1,0 +1,62 @@
+{
+  "phone": "60162231029",
+  "greeting": "Hi, I'm interested in the Love Collection",
+  "pages": [
+    {
+      "src": "pages/01-cover.jpg",
+      "en": "One heart. Three ways to say I love you.",
+      "zh": "一颗心，三种爱的表达。",
+      "product": null
+    },
+    {
+      "src": "pages/02-the-beginning.jpg",
+      "en": "It starts with a flutter: a small heart blooming inside a larger one.",
+      "zh": "一切始于那一瞬的心动，小小的心，在更大的心里绽放。",
+      "product": {
+        "code": "LC-001",
+        "name": "The Beginning 心动"
+      }
+    },
+    {
+      "src": "pages/03-the-connection.jpg",
+      "en": "Gold and white gold, woven together. Two become one, always holding on.",
+      "zh": "黄金与白金交织，两个人成为一体，彼此相守。",
+      "product": {
+        "code": "LC-002",
+        "name": "The Connection 相守"
+      }
+    },
+    {
+      "src": "pages/04-the-everlasting.jpg",
+      "en": "Flowing lines with no end, built to last as long as the promise.",
+      "zh": "流线延绵不绝，如誓言般恒久。",
+      "product": {
+        "code": "LC-003",
+        "name": "The Everlasting 永恒"
+      }
+    },
+    {
+      "src": "pages/05-closing.jpg",
+      "en": "Every love story begins with a heart.",
+      "zh": "每一段爱情，都从一颗心开始。",
+      "product": null
+    }
+  ],
+  "products": [
+    {
+      "code": "LC-001",
+      "name": "The Beginning 心动",
+      "page": 1
+    },
+    {
+      "code": "LC-002",
+      "name": "The Connection 相守",
+      "page": 2
+    },
+    {
+      "code": "LC-003",
+      "name": "The Everlasting 永恒",
+      "page": 3
+    }
+  ]
+}
